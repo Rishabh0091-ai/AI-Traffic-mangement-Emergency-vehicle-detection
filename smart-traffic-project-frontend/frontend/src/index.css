@@ -1,0 +1,29 @@
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\index.css */
+
+/* Reset default browser margins/paddings and ensure full height/width */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh; /* Ensures full viewport height */
+  overflow-x: hidden; /* Prevent horizontal scrollbars if content overflows */
+}
+
+/* Basic styling for body/root for consistent background */
+body {
+  background-color: #282c34; /* Ensure body itself has the dark background */
+  font-family: Arial, sans-serif; /* Consistent font */
+  color: white; /* Consistent text color */
+}
+
+/* Vite's default root font sizing, can keep or remove */
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

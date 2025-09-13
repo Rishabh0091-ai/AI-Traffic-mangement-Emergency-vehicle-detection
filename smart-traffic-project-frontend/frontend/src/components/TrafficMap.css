@@ -1,0 +1,97 @@
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\components\TrafficMap.css */
+.traffic-map-container {
+    background-color: #3a3f4a;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px auto; /* Center the map horizontally */
+    width: calc(100% - 40px);
+    max-width: 900px; /* Max width for larger screens */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center SVG */
+}
+
+.traffic-map-container h3 {
+    color: #61dafb;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.6em;
+}
+
+.traffic-map-svg {
+    background-color: #2e3239; /* Darker background for the map area */
+    border-radius: 8px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    max-width: 100%; /* Ensure responsiveness */
+    height: auto;
+}
+
+/* SVG Styling */
+.intersection-label {
+    fill: #e0e0e0;
+    font-size: 25px;
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+
+.traffic-light {
+    stroke: #333;
+    stroke-width: 2px;
+}
+
+.traffic-light.red { fill: #e74c3c; }
+.traffic-light.yellow { fill: #f1c40f; }
+.traffic-light.green { fill: #2ecc71; }
+
+.road-segment {
+    stroke: #555; /* Road border */
+    stroke-width: 1px;
+}
+
+.vehicle-count {
+    fill: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+.vehicle-count-vertical {
+    transform: rotate(90deg); /* Rotate for vertical roads */
+    transform-origin: center center;
+}
+
+.map-note {
+    font-size: 0.9em;
+    color: #bbb;
+    margin-top: 15px;
+}
+
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\components\TrafficMap.css */
+/* ... (existing CSS) ... */
+
+.emergency-vehicle-marker {
+    animation: pulse-ev 1s infinite alternate; /* Simple pulsating animation */
+}
+
+@keyframes pulse-ev {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.emergency-map-alert {
+    color: #ff0; /* Bright yellow for map alert */
+    font-weight: bold;
+    animation: pulse 1.5s infinite; /* Reusing pulse from ControlPanel.css */
+} 

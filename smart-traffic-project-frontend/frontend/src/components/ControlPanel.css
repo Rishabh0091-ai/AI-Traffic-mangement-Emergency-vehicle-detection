@@ -1,0 +1,131 @@
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\components\ControlPanel.css */
+.control-panel {
+    background-color: #3a3f4a;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+    width: 350px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+}
+
+.control-panel h3 {
+    color: #61dafb;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.6em;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #bbb;
+}
+
+.input-group select,
+.input-group input[type="text"] {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background-color: #2e3239;
+    color: #e0e0e0;
+    font-size: 1em;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.control-panel button {
+    background-color: #2ecc71; /* Greenish for trigger */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.control-panel button:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+
+.control-panel button.clear-button {
+    background-color: #e74c3c; /* Reddish for clear */
+}
+
+.control-panel button.clear-button:hover:not(:disabled) {
+    background-color: #c0392b;
+}
+
+.control-panel button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+.error-message {
+    color: #e74c3c;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.emergency-alert {
+    background-color: #ffeb3b; /* Yellow alert */
+    color: #333;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 20px;
+    font-weight: bold;
+    text-align: center;
+    animation: pulse 1.5s infinite;
+}
+
+.emergency-alert.cleared {
+    background-color: #d4edda; /* Light green for cleared */
+    color: #155724;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\components\ControlPanel.css */
+/* ... (existing CSS) ... */
+
+.control-panel .start-sim-button {
+    background-color: #3498db; /* Blue for start */
+}
+.control-panel .start-sim-button:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+.control-panel .stop-sim-button {
+    background-color: #f39c12; /* Orange for stop */
+}
+.control-panel .stop-sim-button:hover:not(:disabled) {
+    background-color: #e67e22;
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background-color: #555;
+    margin: 20px 0;
+}

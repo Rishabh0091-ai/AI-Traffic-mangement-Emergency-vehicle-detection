@@ -1,0 +1,40 @@
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\components\TrafficCharts.css */
+.traffic-charts-container {
+    background-color: #3a3f4a;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+    width: calc(100% - 40px); /* Adjust width to take almost full screen */
+    max-width: 900px; /* Max width for larger screens */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-left: auto; /* Center the container */
+    margin-right: auto; /* Center the container */
+}
+
+.traffic-charts-container h3 {
+    color: #61dafb;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.6em;
+}
+
+.chart-note {
+    font-size: 0.8em;
+    color: #bbb;
+    margin-top: 15px;
+}
+
+/* Override Recharts default text styles for dark background */
+.recharts-text {
+    fill: #ccc !important;
+}
+.recharts-legend-item-text {
+    color: #fff !important;
+}
+.recharts-tooltip-label, .recharts-tooltip-item-name, .recharts-tooltip-item-value {
+    color: #fff !important;
+}

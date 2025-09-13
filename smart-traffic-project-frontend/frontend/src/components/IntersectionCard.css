@@ -1,0 +1,84 @@
+/* D:\attempt 1 traffic\smart-traffic-project\frontend\src\components\IntersectionCard.css */
+.intersection-card {
+    background-color: #3a3f4a;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.intersection-card h3 {
+    color: #61dafb; /* React blue */
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.5em;
+}
+
+.intersection-card h4 {
+    color: #92b0e7; /* Lighter blue */
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}
+
+.traffic-lights, .lane-data {
+    background-color: #2e3239;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.light-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.light {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+.light.red { background-color: #e74c3c; }
+.light.yellow { background-color: #f1c40f; }
+.light.green { background-color: #2ecc71; }
+
+.direction {
+    font-weight: bold;
+    width: 60px;
+}
+
+.timer {
+    font-size: 0.9em;
+    color: #bbb;
+}
+
+.lane-details {
+    margin-left: 10px;
+    margin-bottom: 5px;
+}
+
+.lane-details p {
+    margin: 2px 0;
+    font-size: 0.95em;
+}
+
+.last-updated {
+    font-size: 0.8em;
+    color: #888;
+    text-align: right;
+    margin-top: 10px;
+}
