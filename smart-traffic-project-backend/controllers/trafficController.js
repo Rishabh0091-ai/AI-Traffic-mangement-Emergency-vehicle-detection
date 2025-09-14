@@ -1,12 +1,12 @@
 // D:\attempt 1 traffic\smart-traffic-project\backend\controllers\trafficController.js
 const Intersection = require('../models/Intersection');
-const EmergencyVehicle = require('../models/EmergencyVehicle'); // Will use this later
+const EmergencyVehicle = require('../models/EmergencyVehicle');
 
 // --- Initial Intersection Data ---
 const initialIntersections = [
     {
         intersectionId: 'A',
-        location: { latitude: 26.4499, longitude: 80.3319 }, // Example coordinates for Kanpur
+        location: { latitude: 26.4499, longitude: 80.3319 },
         trafficLights: [
             { direction: 'NORTH_SOUTH', state: 'RED', timer: 30 },
             { direction: 'EAST_WEST', state: 'GREEN', timer: 30 }
@@ -18,7 +18,7 @@ const initialIntersections = [
     },
     {
         intersectionId: 'B',
-        location: { latitude: 26.4550, longitude: 80.3400 }, // Another example intersection
+        location: { latitude: 26.4550, longitude: 80.3400 },
         trafficLights: [
             { direction: 'NORTH_SOUTH', state: 'GREEN', timer: 30 },
             { direction: 'EAST_WEST', state: 'RED', timer: 30 }
@@ -33,11 +33,8 @@ const initialIntersections = [
 // --- Function to Initialize Intersections in DB ---
 async function initializeIntersections() {
     try {
-        // Clear existing data (for fresh start each time server runs)
         await Intersection.deleteMany({});
-        await EmergencyVehicle.deleteMany({}); // Also clear emergency vehicles
-
-        // Insert initial data
+        await EmergencyVehicle.deleteMany({});
         await Intersection.insertMany(initialIntersections);
         console.log('Initial intersection data inserted into MongoDB.');
     } catch (error) {
@@ -46,57 +43,46 @@ async function initializeIntersections() {
 }
 
 // --- AI/Simulation Logic ---
-let simulationInterval  = null;
-const trafficLightCycleDuration = 2000; // Total seconds for a full cycle (e.g., 30s GREEN + 30s RED for a direction)
-const greenLightDuration = 45; // Default green light duration
-const yellowLightDuration = 5; // Default yellow light duration
-const redLightDuration = 10; // Default red light duration (sum of yellow + green of other direction)
+let simulationInterval;
+const trafficLightCycleDuration = 60;
+const greenLightDuration = 45;
+const yellowLightDuration = 5;
+const redLightDuration = 10;
 
 async function simulateTrafficAndControl(io) {
     console.log('Backend: simulateTrafficAndControl is running its cycle...');
-    // Fetch all intersections
+
+    // Fetch all intersections (not for saving, but to get current state)
     const intersections = await Intersection.find({});
-    console.log(`Backend: Found ${intersections.length} intersections.`); 
+    console.log(`Backend: Found ${intersections.length} intersections.`);
 
     for (const intersection of intersections) {
+        // Create a new object with the updates we want to apply
+        const updates = {};
+
         // --- 1. Simulate Traffic Changes (Randomly adjust vehicle counts) ---
-        for (const lane of intersection.lanes) {
-            // Introduce some randomness for dynamic simulation
-            lane.vehicleCount = Math.max(0, lane.vehicleCount + Math.floor(Math.random() * 7) - 3); // -3 to +3 vehicles
-            lane.averageSpeed = Math.max(10, Math.min(60, lane.averageSpeed + Math.floor(Math.random() * 5) - 2)); // Adjust speed
-            // Simple congestion calculation: Higher count, lower speed = higher congestion
-            lane.congestionLevel = Math.min(100, Math.max(0, Math.round((lane.vehicleCount / 30) * 100 + (60 - lane.averageSpeed))));
-        }
+        const updatedLanes = intersection.lanes.map(lane => {
+            const newLane = { ...lane.toObject() };
+            newLane.vehicleCount = Math.max(0, newLane.vehicleCount + Math.floor(Math.random() * 7) - 3);
+            newLane.averageSpeed = Math.max(10, Math.min(60, newLane.averageSpeed + Math.floor(Math.random() * 5) - 2));
+            newLane.congestionLevel = Math.min(100, Math.max(0, Math.round((newLane.vehicleCount / 30) * 100 + (60 - newLane.averageSpeed))));
+            return newLane;
+        });
+        updates.lanes = updatedLanes;
 
         // --- 2. AI Traffic Light Control Logic ---
-        // Simplified logic: Prioritize direction with more traffic
         let nsTraffic = 0;
         let ewTraffic = 0;
-
-        for (const lane of intersection.lanes) {
-            if (lane.laneId.includes('NS')) {
-                nsTraffic += lane.vehicleCount;
-            } else if (lane.laneId.includes('EW')) {
-                ewTraffic += lane.vehicleCount;
-            }
+        for (const lane of updatedLanes) {
+            if (lane.laneId.includes('NS')) nsTraffic += lane.vehicleCount;
+            if (lane.laneId.includes('EW')) ewTraffic += lane.vehicleCount;
         }
 
-        // Find current active green light direction
-        let currentGreenLightDirection = '';
-        for (const light of intersection.trafficLights) {
-            if (light.state === 'GREEN') {
-                currentGreenLightDirection = light.direction;
-                break;
-            }
-        }
-
-        // Simple AI decision: Switch if current green is significantly less busy
-        // Or if current green has been green for max duration
-        const nsLight = intersection.trafficLights.find(l => l.direction === 'NORTH_SOUTH');
-        const ewLight = intersection.trafficLights.find(l => l.direction === 'EAST_WEST');
+        const updatedTrafficLights = intersection.trafficLights.map(light => ({ ...light.toObject() }));
+        const nsLight = updatedTrafficLights.find(l => l.direction === 'NORTH_SOUTH');
+        const ewLight = updatedTrafficLights.find(l => l.direction === 'EAST_WEST');
 
         if (nsLight && ewLight) {
-             // Check if any emergency vehicle is currently overriding
             const emergencyOverride = await EmergencyVehicle.findOne({
                 isActive: true,
                 currentIntersectionId: intersection.intersectionId,
@@ -104,139 +90,113 @@ async function simulateTrafficAndControl(io) {
             });
 
             if (emergencyOverride) {
-                // Force the path of the emergency vehicle to green
-                // This is a simplified example, real pathfinding would be complex
-                if (emergencyOverride.currentPath && emergencyOverride.currentPath.includes(intersection.intersectionId)) {
-                    const nextIntersectionIndex = emergencyOverride.currentPath.indexOf(intersection.intersectionId) + 1;
-                    if (nextIntersectionIndex < emergencyOverride.currentPath.length) {
-                         // Assuming next intersection dictates which light to turn green
-                         // For simplicity, let's say if moving N-S, N-S light should be green
-                        if (nsTraffic > ewTraffic) { // Placeholder logic to determine main direction
-                            if (nsLight.state !== 'GREEN') {
-                                nsLight.state = 'GREEN';
-                                ewLight.state = 'RED';
-                                nsLight.timer = greenLightDuration;
-                                ewLight.timer = redLightDuration;
-                                nsLight.lastChanged = new Date();
-                                ewLight.lastChanged = new Date();
-                                console.log(`[AI Override] Intersection ${intersection.intersectionId}: Forced NORTH_SOUTH GREEN for Emergency.`);
-                            }
-                        } else {
-                            if (ewLight.state !== 'GREEN') {
-                                ewLight.state = 'GREEN';
-                                nsLight.state = 'RED';
-                                ewLight.timer = greenLightDuration;
-                                nsLight.timer = redLightDuration;
-                                ewLight.lastChanged = new Date();
-                                nsLight.lastChanged = new Date();
-                                console.log(`[AI Override] Intersection ${intersection.intersectionId}: Forced EAST_WEST GREEN for Emergency.`);
-                            }
-                        }
+                // Simplified Emergency Override logic
+                const timeSinceLastChange = (new Date() - nsLight.lastChanged) / 1000;
+                if (timeSinceLastChange > 2) { // Force green after a small delay
+                    if (nsLight.state !== 'GREEN') {
+                        nsLight.state = 'GREEN'; ewLight.state = 'RED';
+                        nsLight.timer = greenLightDuration; ewLight.timer = redLightDuration;
+                        nsLight.lastChanged = new Date(); ewLight.lastChanged = new Date();
                     }
                 }
-
+                console.log(`[AI Override] Intersection ${intersection.intersectionId}: Forced NORTH_SOUTH GREEN for Emergency.`);
             } else {
                 // Normal AI Logic
-                const timeSinceLastChangeNS = (new Date() - nsLight.lastChanged) / 1000; // in seconds
-                const timeSinceLastChangeEW = (new Date() - ewLight.lastChanged) / 1000; // in seconds
+                const timeSinceLastChangeNS = (new Date() - nsLight.lastChanged) / 1000;
+                const timeSinceLastChangeEW = (new Date() - ewLight.lastChanged) / 1000;
 
                 if (nsLight.state === 'GREEN' && timeSinceLastChangeNS > greenLightDuration) {
-                    nsLight.state = 'YELLOW';
-                    nsLight.timer = yellowLightDuration;
-                    nsLight.lastChanged = new Date();
+                    nsLight.state = 'YELLOW'; nsLight.timer = yellowLightDuration; nsLight.lastChanged = new Date();
                 } else if (nsLight.state === 'YELLOW' && timeSinceLastChangeNS > yellowLightDuration) {
-                    nsLight.state = 'RED';
-                    nsLight.timer = redLightDuration;
-                    nsLight.lastChanged = new Date();
-                    // Turn EW green
-                    ewLight.state = 'GREEN';
-                    ewLight.timer = greenLightDuration;
-                    ewLight.lastChanged = new Date();
+                    nsLight.state = 'RED'; nsLight.timer = redLightDuration; nsLight.lastChanged = new Date();
+                    ewLight.state = 'GREEN'; ewLight.timer = greenLightDuration; ewLight.lastChanged = new Date();
                 } else if (ewLight.state === 'GREEN' && timeSinceLastChangeEW > greenLightDuration) {
-                    ewLight.state = 'YELLOW';
-                    ewLight.timer = yellowLightDuration;
-                    ewLight.lastChanged = new Date();
+                    ewLight.state = 'YELLOW'; ewLight.timer = yellowLightDuration; ewLight.lastChanged = new Date();
                 } else if (ewLight.state === 'YELLOW' && timeSinceLastChangeEW > yellowLightDuration) {
-                    ewLight.state = 'RED';
-                    ewLight.timer = redLightDuration;
-                    ewLight.lastChanged = new Date();
-                    // Turn NS green
-                    nsLight.state = 'GREEN';
-                    nsLight.timer = greenLightDuration;
-                    nsLight.lastChanged = new Date();
+                    ewLight.state = 'RED'; ewLight.timer = redLightDuration; ewLight.lastChanged = new Date();
+                    nsLight.state = 'GREEN'; nsLight.timer = greenLightDuration; nsLight.lastChanged = new Date();
                 }
-                // TODO: Implement more intelligent switching based on nsTraffic/ewTraffic
-                // For now, it's time-based cycling with a future override possibility
             }
         }
+        updates.trafficLights = updatedTrafficLights;
 
+        // --- 3. Atomic Update in DB and Emit via Socket.IO ---
+        updates.lastUpdated = new Date();
 
-        // --- 3. Update in DB and Emit via Socket.IO ---
-        await intersection.save(); // Save changes to MongoDB
-        console.log(`Backend: Emitting traffic_update for Intersection ${intersection.intersectionId}. New state: ${JSON.stringify(intersection.trafficLights)}`);
-        io.emit('traffic_update', intersection); // Emit updated intersection data
+        // Use findByIdAndUpdate for atomic, concurrent-safe updates
+        const updatedIntersection = await Intersection.findByIdAndUpdate(
+            intersection._id,
+            updates,
+            { new: true, useFindAndModify: false }
+        );
+
+        if (updatedIntersection) {
+            console.log(`Backend: Emitting traffic_update for Intersection ${updatedIntersection.intersectionId}.`);
+            io.emit('traffic_update', updatedIntersection);
+        } else {
+            console.error(`Backend: Failed to find and update intersection with id ${intersection._id}`);
+        }
     }
 }
 
 
-// --- Emergency Vehicle Simulation Functions (Will be triggered by API later) ---
+// --- Emergency Vehicle Simulation Functions ---
 async function triggerEmergencyVehicle(io, vehicleType, startIntersectionId, destinationIntersectionId) {
-    console.log(`Triggering emergency vehicle: ${vehicleType} from ${startIntersectionId}`);
-    // Clear any previous emergency vehicles for simplicity
+    console.log(`Triggering emergency vehicle: ${vehicleType} from ${startIntersectionId} to ${destinationIntersectionId}`);
     await EmergencyVehicle.deleteMany({});
 
     const emergencyVehicle = new EmergencyVehicle({
-        vehicleId: `EV-${Date.now()}`,
-        type: vehicleType,
-        currentIntersectionId: startIntersectionId,
-        destinationIntersectionId: destinationIntersectionId,
-        isActive: true,
-        entryTime: new Date(),
-        currentPath: [startIntersectionId], // Simplified path
-        priorityOverrideActive: true // Assume priority override is active upon trigger
+        vehicleId: `EV-${Date.now()}`, type: vehicleType, currentIntersectionId: startIntersectionId, destinationIntersectionId,
+        isActive: true, entryTime: new Date(), currentPath: [startIntersectionId, destinationIntersectionId].filter(Boolean),
+        priorityOverrideActive: true
     });
     await emergencyVehicle.save();
 
     io.emit('emergency_vehicle_alert', emergencyVehicle);
-    console.log('Emergency vehicle saved and alert emitted.');
+    console.log('Emergency vehicle saved and initial alert emitted.');
 
-    // Simulate movement (very basic: moves after some time)
-    setTimeout(async () => {
-        const currentEV = await EmergencyVehicle.findOne({ vehicleId: emergencyVehicle.vehicleId });
-        if (currentEV && currentEV.isActive) {
-            // For demonstration, let's just move it to the next intersection in its path or clear it
-            // A more complex system would calculate a dynamic path
-            console.log(`Emergency vehicle ${currentEV.vehicleId} moved/cleared.`);
-            // For simplicity, let's deactivate it after 30 seconds
-            currentEV.isActive = false;
-            currentEV.priorityOverrideActive = false;
-            currentEV.exitTime = new Date();
-            await currentEV.save();
-            io.emit('emergency_vehicle_alert_cleared', currentEV.vehicleId); // Notify frontend cleared
-        }
-    }, 30000); // Emergency vehicle active for 30 seconds for simulation
+    if (destinationIntersectionId && startIntersectionId !== destinationIntersectionId) {
+        setTimeout(async () => {
+            const updatedEV = await EmergencyVehicle.findByIdAndUpdate(emergencyVehicle._id, { currentIntersectionId: destinationIntersectionId }, { new: true, useFindAndModify: false });
+            if (updatedEV && updatedEV.isActive) {
+                io.emit('emergency_vehicle_alert', updatedEV);
+                console.log(`Emergency vehicle ${updatedEV.vehicleId} moved to ${destinationIntersectionId}.`);
+
+                setTimeout(async () => {
+                    const finalEV = await EmergencyVehicle.findByIdAndUpdate(updatedEV._id, { isActive: false, priorityOverrideActive: false, exitTime: new Date() }, { new: true, useFindAndModify: false });
+                    if (finalEV) {
+                        io.emit('emergency_vehicle_alert_cleared', finalEV.vehicleId);
+                        console.log(`Emergency vehicle ${finalEV.vehicleId} cleared after reaching destination.`);
+                    }
+                }, 10000);
+            }
+        }, 10000);
+    } else {
+        setTimeout(async () => {
+            const finalEV = await EmergencyVehicle.findByIdAndUpdate(emergencyVehicle._id, { isActive: false, priorityOverrideActive: false, exitTime: new Date() }, { new: true, useFindAndModify: false });
+            if (finalEV) {
+                io.emit('emergency_vehicle_alert_cleared', finalEV.vehicleId);
+                console.log(`Emergency vehicle ${finalEV.vehicleId} cleared.`);
+            }
+        }, 15000);
+    }
 }
 
 async function clearEmergencyVehicles(io) {
     await EmergencyVehicle.deleteMany({});
-    io.emit('emergency_vehicle_alert_cleared', 'all'); // Notify frontend
+    io.emit('emergency_vehicle_alert_cleared', 'all');
     console.log('All emergency vehicles cleared.');
 }
 
-
 // --- Control Simulation Start/Stop ---
-let ioInstance; // To store the Socket.IO instance
-const simulationIntervalDuration = 2000; // 2 seconds
+const simulationIntervalDuration = 2000;
 
 function startSimulation(ioObj) {
-    if (simulationInterval) {
-        clearInterval(simulationInterval);
-    }
+    if (simulationInterval) clearInterval(simulationInterval);
     console.log('Starting traffic simulation...');
-        simulateTrafficAndControl(ioObj); // Run once immediately
+    simulateTrafficAndControl(ioObj);
     simulationInterval = setInterval(() => simulateTrafficAndControl(ioObj), simulationIntervalDuration);
 }
-   
 
 function stopSimulation() {
     console.log('Stopping traffic simulation...');
@@ -246,14 +206,10 @@ function stopSimulation() {
     }
 }
 
-// Export functions to be used in server.js
+// Export functions
 module.exports = {
-    initializeIntersections,
-    startSimulation,
-    stopSimulation,
-    triggerEmergencyVehicle,
-    clearEmergencyVehicles,
-    // Add API endpoints here if needed directly from controller
+    initializeIntersections, startSimulation, stopSimulation,
+    triggerEmergencyVehicle, clearEmergencyVehicles,
     getIntersections: async (req, res) => {
         try {
             const intersections = await Intersection.find({});

@@ -1,0 +1,27 @@
+# Git ignore for the entire project
+
+# Node.js dependencies
+node_modules/
+
+# Environment variables (CRUCIAL for security)
+.env
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Vite specific
+/frontend/dist/
+
+# VSCodium specific
+.vscode/
+
+# Nodemon
+.nodemon.json

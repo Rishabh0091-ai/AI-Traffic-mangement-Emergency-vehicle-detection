@@ -55,24 +55,22 @@ function App() {
     };
   }, []);
 
-  // Function to trigger emergency via API call to backend
   const triggerEmergency = async (vehicleType, startIntersectionId, destinationIntersectionId) => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/emergency/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleType, startIntersectionId, destinationIntersectionId }),
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      console.log(data.message);
-    } catch (error) {
-      console.error("Error triggering emergency:", error);
-      throw error;
-    }
-  };
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/emergency/trigger`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json', // <--- Ensure this is a string
+      },
+      body: JSON.stringify({ vehicleType, startIntersectionId, destinationIntersectionId }), // <--- Ensure the variables are in the body
+    });
+    // ...
+  } catch (error) {
+    console.error("Error triggering emergency:", error);
+    throw error;
+  }
+};
 
-  // Function to clear emergency via API call to backend
   const clearEmergency = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/emergency/clear`, {
@@ -89,7 +87,6 @@ function App() {
     }
   };
 
-  // NEW: Functions to start/stop simulation via API calls to backend
   const startSimulation = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/simulation/start`, { method: 'POST' });
@@ -118,24 +115,19 @@ function App() {
     }
   };
 
-
   return (
     <div className="App">
       <h1>Smart Traffic Control System</h1>
       <p className="status-message">Status: {connectionStatus}</p>
-
       <ControlPanel
         onTriggerEmergency={triggerEmergency}
         onClearEmergency={clearEmergency}
         emergencyStatus={emergencyStatus}
-        onStartSimulation={startSimulation} // NEW prop
-        onStopSimulation={stopSimulation}   // NEW prop
+        onStartSimulation={startSimulation}
+        onStopSimulation={stopSimulation}
       />
-
       <TrafficMap intersections={intersections} emergencyStatus={emergencyStatus} />
-
       <TrafficCharts intersections={intersections} />
-
       <div className="intersections-container">
         {intersections.length > 0 ? (
           intersections.map(intersection => (
